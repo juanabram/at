@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10172b">
+  <meta name="description" content="Caza estrellas: un minijuego en equipo para aprender a colaborar en GitHub.">
+  <title>Caza estrellas · Juego en equipo</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="personalizar.js"></script>
+  <script defer src="firebase-config.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/12.19.0/firebase-database-compat.js"></script>
+  <script defer src="game.js"></script>
+</head>
+<body>
+  <div class="background-stars" aria-hidden="true"></div>
+  <header class="topbar wrap">
+    <a class="brand" href="./"><span class="brand-icon">✦</span> <span id="brand-name">CAZA ESTRELLAS</span></a>
+    <span class="top-pill">JUEGA EN EQUIPO</span>
+  </header>
+
+  <main class="wrap">
+    <section id="home" class="home">
+      <div class="intro">
+        <div class="intro-copy">
+          <p class="eyebrow">UN JUEGO PARA TU EQUIPO</p>
+          <h1 id="game-title">Caza estrellas</h1>
+          <p id="game-subtitle" class="lead">Recoge estrellas antes de que termine el tiempo. ¡Gana quien consiga más!</p>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="art-top"><span>★ STAR STATION</span><span>● REC</span></div>
+          <div class="art-grid"></div>
+          <div class="art-ring"></div>
+          <div class="art-star">★</div>
+          <div class="art-avatar avatar-one"><span></span></div>
+          <div class="art-avatar avatar-two"><span></span></div>
+          <div class="art-caption">¡A JUGAR!</div>
+        </div>
+      </div>
+      <div class="home-grid">
+        <section class="card join-card" aria-labelledby="join-heading">
+          <div class="card-heading"><span class="number">01</span><div><p class="eyebrow">ENTRAR</p><h2 id="join-heading">Tu partida</h2></div></div>
+          <label for="player-name">Nombre</label>
+          <input id="player-name" maxlength="16" placeholder="Por ejemplo: Ana" autocomplete="nickname">
+          <label for="duration" class="duration-label">Duración para sala nueva o prueba solo</label>
+          <select id="duration"><option value="1" selected>1 minuto</option><option value="2">2 minutos</option><option value="3">3 minutos</option></select>
+          <div class="join-buttons">
+            <button id="create-room" class="button primary" type="button">Crear sala <span aria-hidden="true">→</span></button>
+            <div class="join-divider">¿Ya tienes código?</div>
+            <div class="join-code-row"><input id="room-code" maxlength="6" aria-label="Código de sala" placeholder="ABC234" autocapitalize="characters" spellcheck="false"><button id="join-room" class="button secondary" type="button">Entrar</button></div>
+          </div>
+          <p id="home-error" class="error" role="alert" hidden></p>
+          <p id="setup-hint" class="setup-hint" hidden>Las salas aún no están disponibles. Puedes probar el juego a solas.</p>
+          <button id="solo-button" class="solo-link" type="button">Probar solo</button>
+        </section>
+        <aside class="card how-card" aria-labelledby="how-heading">
+          <div class="card-heading"><span class="number yellow">?</span><div><p class="eyebrow">3 PASOS</p><h2 id="how-heading">Cómo jugar</h2></div></div>
+          <ol>
+            <li><strong>Crea una sala</strong> y comparte el código.</li>
+            <li><strong>Muévete</strong> con WASD o las flechas.</li>
+            <li><strong>Gana quien tenga más puntos</strong> al terminar el tiempo.</li>
+          </ol>
+        </aside>
+      </div>
+    </section>
+
+    <section id="game" class="game" hidden>
+      <div class="game-top">
+        <div><p class="eyebrow">EN JUEGO</p><h1 id="room-heading">Sala <span id="room-label"></span></h1><p id="mode-label" class="mode-label"></p></div>
+        <div class="game-actions"><button id="toggle-players" class="button secondary" type="button" aria-controls="game-drawer" aria-expanded="false">Jugadores</button><button id="copy-link" class="button quiet" type="button">Copiar enlace</button><button id="leave-room" class="button quiet" type="button">Salir</button></div>
+      </div>
+      <div class="board-card card">
+          <div class="board-head"><div><span class="live-dot"></span><strong id="status-label">Conectando…</strong></div><div class="board-metrics"><div class="timer"><span>TIEMPO</span><strong id="time-left">01:00</strong></div><div class="score"><span>TUS PUNTOS</span><strong id="score">0</strong></div></div></div>
+          <div id="lobby-banner" class="lobby-banner" hidden><h2>Esperando al equipo</h2><p id="lobby-message">Comparte el código para invitar a tus compañeros.</p><button id="start-game" class="button primary" type="button">Iniciar partida</button></div>
+          <canvas id="board" width="1092" height="676" aria-label="Mapa del juego con estrellas y jugadores"></canvas>
+          <div class="board-progress"><span aria-hidden="true">★</span><progress id="progress" max="60" value="60" aria-label="Tiempo restante"></progress><span id="spawn-label">Nuevas estrellas cada 6 segundos</span></div>
+          <div id="win-message" class="win-message" role="status" hidden><span>★ ★ ★</span><h2>¡Tiempo!</h2><p id="winner-line"></p><button id="new-room" class="button primary" type="button">Otra sala</button></div>
+          <div class="controls" aria-label="Controles táctiles"><div class="control-row"><button data-move="up" type="button" aria-label="Mover arriba">↑</button></div><div class="control-row"><button data-move="left" type="button" aria-label="Mover izquierda">←</button><button data-move="down" type="button" aria-label="Mover abajo">↓</button><button data-move="right" type="button" aria-label="Mover derecha">→</button></div></div>
+          <p class="board-tip">Mover: WASD o flechas.</p>
+      </div>
+      <p id="game-notice" class="notice" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+  <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
+  <aside id="game-drawer" class="game-drawer card" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden>
+    <div class="drawer-head"><div><p class="eyebrow">CAZA ESTRELLAS</p><h2 id="drawer-title">Jugadores</h2></div><button id="close-drawer" class="drawer-close" type="button" aria-label="Cerrar panel">×</button></div>
+    <div id="players-panel" class="drawer-panel"><div id="player-list" class="player-list"></div><div class="mission-box"><span class="mission-icon">✦</span><p id="mission-message">Consigue más estrellas que los demás.</p></div></div>
+  </aside>
+  <footer class="wrap footer"><span>✦ CAZA ESTRELLAS</span></footer>
+</body>
+</html>

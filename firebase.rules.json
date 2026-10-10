@@ -1,0 +1,71 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rooms": {
+      "$room": {
+        ".read": "auth != null && $room.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
+        "config": {
+          ".write": "auth != null && $room.matches(/^[A-HJ-NP-Z2-9]{6}$/) && !data.exists()",
+          ".validate": "newData.hasChildren(['version', 'durationMs', 'spawnMs'])",
+          "version": {
+            ".validate": "newData.isNumber() && newData.val() === 2"
+          },
+          "durationMs": {
+            ".validate": "newData.isNumber() && (newData.val() === 60000 || newData.val() === 120000 || newData.val() === 180000)"
+          },
+          "spawnMs": {
+            ".validate": "newData.isNumber() && newData.val() === 6000"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "startAt": {
+          ".write": "auth != null && $room.matches(/^[A-HJ-NP-Z2-9]{6}$/) && !data.exists() && root.child('rooms').child($room).child('config').exists() && root.child('rooms').child($room).child('players').child(auth.uid).exists() && newData.isNumber() && newData.val() >= now - 60000 && newData.val() <= now + 60000"
+        },
+        "players": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && $room.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
+            ".validate": "newData.hasChildren(['name', 'x', 'y', 'color'])",
+            "name": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 16"
+            },
+            "x": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 20 && newData.val() % 1 === 0"
+            },
+            "y": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 12 && newData.val() % 1 === 0"
+            },
+            "color": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5 && newData.val() % 1 === 0"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "stars": {
+          "$round": {
+            "$star": {
+              ".write": "auth != null && $round.matches(/^([0-9]|[12][0-9])$/) && $star.matches(/^[0-7]$/) && !data.exists() && root.child('rooms').child($room).child('startAt').exists() && now >= root.child('rooms').child($room).child('startAt').val() && now < root.child('rooms').child($room).child('startAt').val() + root.child('rooms').child($room).child('config').child('durationMs').val() && newData.child('by').val() === auth.uid && newData.child('name').val() === root.child('rooms').child($room).child('players').child(auth.uid).child('name').val()",
+              ".validate": "newData.hasChildren(['by', 'name', 'round'])",
+              "by": {
+                ".validate": "newData.isString() && newData.val() === auth.uid"
+              },
+              "name": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 16"
+              },
+              "round": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 29 && newData.val() % 1 === 0 && $round === newData.val() + '' && now >= root.child('rooms').child($room).child('startAt').val() + newData.val() * root.child('rooms').child($room).child('config').child('spawnMs').val() && now < root.child('rooms').child($room).child('startAt').val() + (newData.val() + 1) * root.child('rooms').child($room).child('config').child('spawnMs').val()"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
